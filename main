@@ -1,0 +1,121 @@
+import warnings #gérer les avertissements générés par Python pendant l'exécution du programme
+warnings.filterwarnings('ignore')
+#Cette ligne définit un filtre pour ignorer tous les avertissements générés par Python
+import pandas as pd
+from google.colab import drive
+drive.mount('/content/drive')
+#path = '/content/drive/MyDrive/CSV/car_data.csv'
+df = pd.read_csv('/content/drive/MyDrive/CSV/car_data.csv')
+#print(df)
+df.head()
+df.tail()
+df.shape
+print("numbers of rows", df.shape[0])
+print("numbers of column", df.shape[1])
+#df.info()
+df.isnull() #check null values
+df.isnull().sum()
+df.describe() #bech yehseblek l mean wel variance..
+#calculer l'age de voiture
+import datetime #pour travailler avec des dates et des heures.
+date_time = datetime.datetime.now() #pour obtenir la date et l'heure actuelles sous forme d'un objet datetime.
+df['Age']=date_time.year - df['Year'] #Ensuite, il suppose que data est un ensemble de données avec une colonne nommée 'Year',
+# qui représente l'année de naissance des individus.
+#Il calcule l'âge en soustrayant l'année de naissance de chaque individu de l'année actuelle obtenue à l'étape 2.
+df.head()
+df.drop('Year',axis=1,inplace=True) #data.drop('Year',axis=1,inplace=True)
+#axis=1 : Cela spécifie que vous souhaitez supprimer une colonne (l'axe 1 représente les colonnes, tandis que l'axe 0 représente les lignes)
+
+import seaborn as sns #extension de Matplotlib pour créer des graphiques statistiques esthétiquement agréables en Python.
+#sns.boxplot(df['Selling_Price'])
+#Cette ligne de code utilise la fonction boxplot de Seaborn pour créer un graphique en boîte de la colonne 'Selling_Price' de votre ensemble
+#de données data. Le graphique en boîte présente la distribution des valeurs de la colonne, y compris la médiane (ligne centrale de la boîte),
+#les quartiles (extrémités de la boîte), et les valeurs aberrantes potentielles (points au-delà des moustaches).
+
+sorted(df['Selling_Price'],reverse=True)
+#df['Selling_Price']: Cette partie du code extrait la colonne 'Selling_Price' de votre ensemble de données data.
+#sorted: C'est une fonction Python intégrée qui trie les éléments d'une séquence, telle qu'une liste ou une colonne de données, par ordre croissant par défaut.
+#reverse=True: Lorsque vous spécifiez reverse=True, cela inverse l'ordre de tri, le triant donc par ordre décroissant.
+
+df = df[~(df['Selling_Price']>=33.0) & (df['Selling_Price']<=35.0)]
+#conserver que les lignes où la colonne 'Selling_Price' est strictement inférieure à 33.0 et simultanément strictement supérieure à 35.0
+df['Fuel_Type'].unique()
+df['Fuel_Type'] = df['Fuel_Type'].map({'Petrol':0,'Diesel':1,'CNG':2})
+df['Fuel_Type'].unique()
+df['Seller_Type'].unique()
+df['Seller_Type'] = df['Seller_Type'].map({'Dealer':0,'Individual':1})
+df['Seller_Type'].unique()
+df['Transmission'].unique()
+df['Transmission'] =df['Transmission'].map({'Manual':0,'Automatic':1})
+df['Transmission'].unique()
+df.head()
+X = df.drop(['Car_Name','Selling_Price'],axis=1)
+y = df['Selling_Price']
+y
+#Splitting The Dataset Into The Training Set And Test Set
+from sklearn.model_selection import train_test_split
+X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.20,random_state=42)
+# Import The models
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import GradientBoostingRegressor #est utilisé pour des tâches de régression et est connu pour sa grande puissance prédictive.
+from xgboost import XGBRegressor #Il offre des performances élevées, une régularisation efficace et une gestion avancée de l'optimisation.
+# Model Training
+lr = LinearRegression()
+lr.fit(X_train,y_train)
+# créez une instance de la classe LinearRegression de scikit-learn (sklearn) et entraînez le modèle en utilisant les données d'entraînement
+ #(X_train pour les caractéristiques et y_train pour les étiquettes cibles).
+rf = RandomForestRegressor()
+rf.fit(X_train,y_train)
+#créez une instance de RandomForestRegressor de scikit-learn et entraînez le modèle de forêt aléatoire en utilisant les données d'entraînement.
+xgb = GradientBoostingRegressor()
+xgb.fit(X_train,y_train)
+#créez une instance de GradientBoostingRegressor de scikit-learn et entraînez le modèle de boosting par gradient en utilisant les données d'entraînement.
+xg = XGBRegressor()
+xg.fit(X_train,y_train)
+#créez une instance de XGBRegressor de la bibliothèque XGBoost et entraînez le modèle XGBoost en utilisant les données d'entraînement
+# Prediction on Test Data
+y_pred1 = lr.predict(X_test)
+y_pred2 = rf.predict(X_test)
+y_pred3 = xgb.predict(X_test)
+y_pred4 = xg.predict(X_test)
+
+#Evaluating the Algorithm
+from sklearn import metrics
+score1 = metrics.r2_score(y_test,y_pred1)
+score2 = metrics.r2_score(y_test,y_pred2)
+score3 = metrics.r2_score(y_test,y_pred3)
+score4 = metrics.r2_score(y_test,y_pred4)
+print(score1,score2,score3,score4)
+#Le coefficient de détermination R² mesure la proportion de la variance totale de la variable cible expliquée par le modèle. Il varie de 0 à 1,
+# où 1 indique une excellente adéquation du modèle aux données.
+#Après avoir calculé ces scores R² pour chaque modèle, vous pouvez les utiliser pour comparer les performances des modèles et déterminer lequel
+#offre la meilleure adéquation aux données de test. Un score R² plus élevé indique généralement un meilleur ajustement du modèle aux données
+final_data = pd.DataFrame({'Models':['LR','RF','GBR','XG'],
+             "R2_SCORE":[score1,score2,score3,score4]})
+final_data
+#crée un DataFrame final_data contenant les noms des modèles ('LR' pour régression linéaire, 'RF' pour forêt aléatoire, 'GBR' pour boosting par gradient,
+#'XG' pour XGBoost) ainsi que les scores R² correspondants pour évaluer la performance de ces modèles
+sns.barplot(x='Models', y='R2_SCORE', data=final_data)
+
+#Save The Model
+xg = XGBRegressor()
+xg_final = xg.fit(X,y)
+import joblib
+joblib.dump(xg_final,'car_price_predictor') #la bibliothèque Joblib pour enregistrer (sérialiser) un modèle XGBoost (xg_final) dans un fichier appelé "car_price_predictor".
+#Cela vous permettra de sauvegarder votre modèle pour une utilisation ultérieure sans avoir à le réentraîner.
+model = joblib.load('car_price_predictor') #pour charger un modèle précédemment sauvegardé à partir du fichier "car_price_predictor"
+#Prediction on New Data
+import pandas as pd
+data_new = pd.DataFrame({
+    'Present_Price':5.59,
+    'Kms_Driven':27000,
+    'Fuel_Type':0,
+    'Seller_Type':0,
+    'Transmission':0,
+    'Owner':0,
+    'Age':8
+},index=[0])
+model.predict(data_new)
+
+
